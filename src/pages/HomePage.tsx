@@ -4,6 +4,8 @@ import { ArrowRight, Download, Image as ImageIcon, Layers } from 'lucide-react';
 import SearchBar from '../components/ui/SearchBar';
 import MasonryGrid from '../components/ui/MasonryGrid';
 import CategoryCard from '../components/ui/CategoryCard';
+import EmptyState from '../components/ui/EmptyState';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { useImages } from '../hooks/useImages';
 import { useCategories } from '../hooks/useCategories';
 import { useStats } from '../hooks/useStats';
@@ -13,7 +15,7 @@ export default function HomePage() {
   const [heroIndex, setHeroIndex] = useState(0);
   const { images: featuredImages, loading: featuredLoading } = useImages({ featured: true, limit: 12 });
   const { images: recentImages, loading: recentLoading } = useImages({ sort: 'newest', limit: 12 });
-  const { categories } = useCategories();
+  const { categories, loading: categoriesLoading, error: categoriesError } = useCategories();
   const { stats, loading: statsLoading } = useStats();
 
   useEffect(() => {
@@ -23,6 +25,27 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
+  if (categoriesError) {
+    return (
+      <div className="pt-24 pb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <EmptyState
+            icon={<ImageIcon className="w-8 h-8 text-neutral-400" />}
+            title="Unable to load content"
+            description="There was an error loading the homepage content. Please check your connection and try again."
+            action={
+              <button
+                onClick={() => window.location.reload()}
+                className="px-6 py-3 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-medium hover:opacity-90 transition-opacity"
+              >
+                Retry
+              </button>
+            }
+          />
+        </div>
+      </div>
+    );
+  }
   return (
     <div>
       <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
@@ -96,9 +119,15 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {categories.slice(0, 8).map((cat) => (
-              <CategoryCard key={cat.id} category={cat} />
-            ))}
+            {categoriesLoading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="skeleton aspect-[3/2] rounded-2xl" />
+              ))
+            ) : (
+              categories.slice(0, 8).map((cat) => (
+                <CategoryCard key={cat.id} category={cat} />
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -127,7 +156,7 @@ export default function HomePage() {
                 <ImageIcon className="w-6 h-6 text-accent-600 dark:text-accent-400" />
               </div>
               <div className="text-3xl font-bold text-neutral-900 dark:text-white">
-                {statsLoading ? '...' : `${stats.imageCount.toLocaleString()}+`}
+                {statsLoading ? <LoadingSpinner size="sm" /> : `${stats.imageCount.toLocaleString()}+`}
               </div>
               <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Free Images</div>
             </div>
@@ -137,7 +166,7 @@ export default function HomePage() {
                 <Layers className="w-6 h-6 text-accent-600 dark:text-accent-400" />
               </div>
               <div className="text-3xl font-bold text-neutral-900 dark:text-white">
-                {statsLoading ? '...' : stats.categoryCount}
+                {statsLoading ? <LoadingSpinner size="sm" /> : stats.categoryCount}
               </div>
               <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Categories</div>
             </div>
@@ -147,7 +176,7 @@ export default function HomePage() {
                 <Download className="w-6 h-6 text-accent-600 dark:text-accent-400" />
               </div>
               <div className="text-3xl font-bold text-neutral-900 dark:text-white">
-                {statsLoading ? '...' : `${(stats.downloadCount / 1000).toFixed(1)}K+`}
+                {statsLoading ? <LoadingSpinner size="sm" /> : `${(stats.downloadCount / 1000).toFixed(1)}K+`}
               </div>
               <div className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">Downloads</div>
             </div>

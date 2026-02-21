@@ -5,9 +5,11 @@ import type { Category } from '../types';
 export function useCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchCategories() {
+      setError(null);
       try {
         const { data: cats } = await supabase
           .from('categories')
@@ -32,6 +34,7 @@ export function useCategories() {
         setCategories(withCounts);
       } catch (err) {
         console.error('Error fetching categories:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch categories');
       } finally {
         setLoading(false);
       }
@@ -40,5 +43,5 @@ export function useCategories() {
     fetchCategories();
   }, []);
 
-  return { categories, loading };
+  return { categories, loading, error };
 }
